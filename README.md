@@ -35,7 +35,7 @@ Testing has shown that an archived .evtx file is changed the first time it is re
 
 ![Example4](/Example4.png)
 
-HuntExes was quit so the csv files would be updated.  Then a noisy and benign (in in the case of the samples found in this environment) IMPHASH was moved to the AllowList, and another evtx was processed.  HuntExes writes to the console when it encounters a whitelisted hash
+HuntExes was quit so the csv files would be updated.  Then a noisy and benign (in in the case of the samples found in this environment) IMPHASH was moved to the AllowList, and another evtx was processed.  HuntExes writes to the console when it encounters an AllowListed hash
 
 ![Example5](/Example5.png)
 
