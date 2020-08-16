@@ -5,7 +5,7 @@ HuntExes - Extract Sysmon Event ID 1 (Process Creation) events from either the l
 Summary of what HuntExes does:
  - Parse out key data elements from sysmon event 1 (Process Create) - UtcTime, Computer, Hashes, Image
  - From the Hashes, regex to parse out the MD5, SHA256, and IMPHASH separately
- - If CSV files don't exist, create 6 CSV Files: MD5Unknown, MD5Bad, SHA256Unknown, SHA256Bad, IMPHASHUnknown, IMPHASHBad, MD5Allowlist, SHA256Allowlist, IMPHASHAllowlist
+ - If CSV files don't exist, create 9 CSV Files: MD5Unknown, MD5Bad, SHA256Unknown, SHA256Bad, IMPHASHUnknown, IMPHASHBad, MD5Allowlist, SHA256Allowlist, IMPHASHAllowlist
  	- Unknown means no results were found from querying bazaar (or future virustotal integration, or whatever other services).  Unknown was picked because "good" would be potentially misleading.
 	- Bad means results were found and the hash matches a sample that's reported malicious.
     - AllowList is to manually enter hashes and a comment so that HuntExes ignores them - it won't query, the Bad or Unknown lists, or Malware Bazaar if it parses these hashes.
