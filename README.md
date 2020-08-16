@@ -28,7 +28,15 @@ Note:
 Testing has shown that an archived .evtx file is changed the first time it is read using get-winevent (which is how HuntExes reads the events).  The file's hash and LastWriteTime change, but the event data does not.  Subsequent reads do not have the same effect.  This is possibly due to Microsoft flipping a bit in the file to indicate it had been read, but I have not confirmed.
 
 ![HuntExesFlow](/Example1.png)
+
 ![HuntExesFlow](/Example2.png)
+
 ![HuntExesFlow](/Example3.png)
+
 ![HuntExesFlow](/Example4.png)
+
+HuntExes was quit so the csv files would be updated.  Then a noisy and benign (in in the case of the samples found in this environment) IMPHASH was moved to the AllowList, and another evtx was processed.  HuntExes writes to the console when it encounters a whitelisted hash
+
+![HuntExesFlow](/Example5.png)
+
 ![HuntExesFlow](/HuntExesFlow.png)
