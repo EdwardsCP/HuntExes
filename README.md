@@ -27,5 +27,8 @@ Testing has shown the parsing to work if some/all of those aren't available (the
 Note:
 Testing has shown that an archived .evtx file is changed the first time it is read using get-winevent (which is how HuntExes reads the events).  The file's hash and LastWriteTime change, but the event data does not.  Subsequent reads do not have the same effect.  This is possibly due to Microsoft flipping a bit in the file to indicate it had been read, but I have not confirmed.
 
-
+![HuntExesFlow](/Example1.png)
+![HuntExesFlow](/Example2.png)
+![HuntExesFlow](/Example3.png)
+![HuntExesFlow](/Example4.png)
 ![HuntExesFlow](/HuntExesFlow.png)
