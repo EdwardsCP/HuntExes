@@ -81,15 +81,15 @@ Function Banner {
     Start-Sleep -m 10
 	write-host "                                                                                                      "
     Start-Sleep -m 10
-	write-host "              EEEEEEEEEEEEEEEEEEEEEE                                   _____                          "
+	write-host "              EEEEEEEEEEEEEEEEEEEEEE                                   _______                        "
     Start-Sleep -m 10
-	write-host "              E::::::::::::::::::::E                                  |v 1.0|____                     "
+	write-host "              E::::::::::::::::::::E                                  |v 1.0.1___                     "
     Start-Sleep -m 10
 	write-host "              E::::::::::::::::::::E                                  |@EdwardsCP|                    "
     Start-Sleep -m 10
-	write-host "              EE::::::EEEEEEEEE::::E                                  ¯¯¯¯¯¯¯¯¯¯¯¯                    "
+	write-host "              E::::::::::::::::::::E                                  ¯¯¯¯¯¯¯¯¯¯¯¯                    "
     Start-Sleep -m 10
-	write-host "              EE::::::EEEEEEEEE::::E                                                                  "
+	write-host "              EE:::::EEEEEEEEE:::::E                                                                  "
     Start-Sleep -m 10
 	write-host "               E:::::E       EEEEEExxxxxxx      xxxxxxx eeeeeeeeeeee        ssssssssss                "
     Start-Sleep -m 10
@@ -105,7 +105,7 @@ Function Banner {
     Start-Sleep -m 10
 	write-host "               E:::::E                  x::::::::x  e::::::eeeeeeeeeee        s::::::s                "
     Start-Sleep -m 10
-	write-host "               E:::::E       EEEEEE    x::::::::::x e:::::::e           ssssss   s:::::s              "
+	write-host "               E:::::E        EEEEEE    x:::::::::x e:::::::e            ssssss   s:::::s              "
     Start-Sleep -m 10
 	write-host "              EE::::::EEEEEEEE:::::E   x:::::xx:::::xe::::::::e          s:::::ssss::::::s            "
     Start-Sleep -m 10
@@ -115,6 +115,8 @@ Function Banner {
     Start-Sleep -m 10
 	write-host "              EEEEEEEEEEEEEEEEEEEEEExxxxxxx      xxxxxxx eeeeeeeeeeeeee    sssssssssss                "
     Start-Sleep -m 10
+
+
 
     FileCheck
 }
@@ -326,7 +328,19 @@ Function ImportHashCSVs{
         }
         $script:dtIMPHASHAllowList.Rows.Add($script:row) | Out-Null
     }
-
+    write-host " "
+    Write-Host "========================="
+    Write-Host "Total AllowListed MD5 loaded into memory from" $Script:MD5AllowListFile ":" $script:dtMD5AllowList.Rows.Count
+    Write-Host "Total AllowListed SHA256 loaded into memory from" $script:SHA256AllowListFile ":" $script:dtSHA256AllowList.Rows.Count
+    Write-Host "Total AllowListed IMPHASH loaded into memory from" $script:IMPHASHAllowListFile ":" $script:dtIMPHASHAllowList.Rows.Count
+    Write-Host "Total BadListed MD5 loaded into memory from" $script:MD5BadFile ":" $script:dtMD5Bad.Rows.Count
+    Write-Host "Total BadListed SHA256 loaded into memory from" $script:SHA256BadFile ":" $script:dtSHA256Bad.Rows.Count
+    Write-Host "Total BadListed IMPHASH loaded into memory from" $script:IMPHASHBadFile ":" $script:dtIMPHASHBad.Rows.Count
+    Write-Host "Total UnknownListed MD5 loaded into memory from" $script:MD5UnknownFile ":" $script:dtMD5Unknown.Rows.Count
+    Write-Host "Total UnknownListed SHA256loaded into memory from" $script:SHA256UnknownFile ":" $script:dtSHA256Unknown.Rows.Count
+    Write-Host "Total UnknownListed IMPHASH loaded into memory from" $script:IMPHASHUnknownFile ":" $script:dtIMPHASHUnknown.Rows.Count
+    Write-Host "========================="
+    write-host " "
     #After the tables are loaded with data from the CSVs, go to the menu so the user can select what they want to process
     MenuLogOrFile
 }
@@ -423,7 +437,7 @@ Function ProcessEvents{
     $script:BazaarCounter = 0
     $PassCount = 0			  
 	foreach ($script:event in $script:events) {
-        #For every 50th event processed, display a countdown of how many loaded events are left.  Comment out both of these If statements if it's too noisy.
+        #For ever 50th event processed, display a countdown of how many loaded events are left.  Comment out both of these If statements if it's too noisy.
         If ($PassCount -eq 51){
             $PassCount = 1
         }
