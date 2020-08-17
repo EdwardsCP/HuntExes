@@ -459,7 +459,7 @@ Function ProcessEvents{
         if ($script:MD5Parse){
             $script:MD5 = $Matches[1]
         }
-        #if MD5 isn't found in this event, set MD5nextEvent to true. This should help handle environments with syslog configs that don't generate MD5
+        #if MD5 isn't found in this event, set MD5nextEvent to true. This should help handle environments with sysmon configs that don't generate MD5
         if (!($script:MD5Parse)){
             $MD5nextEvent = $true
             $NoMD5Counter++
@@ -471,7 +471,7 @@ Function ProcessEvents{
         if ($script:SHA256Parse){
             $script:SHA256 = $Matches[1]
         }
-        #if SHA256 isn't found in this event, set SHA256nextEvent to true. This should help handle environments with syslog configs that don't generate SHA256
+        #if SHA256 isn't found in this event, set SHA256nextEvent to true. This should help handle environments with sysmon configs that don't generate SHA256
         if (!($script:SHA256Parse)){
             $SHA256nextEvent = $true
             $NoSHA256Counter++
@@ -483,7 +483,7 @@ Function ProcessEvents{
         if ($script:IMPHASHParse){
             $script:IMPHASH = $Matches[1]
         }
-        #if IMPHASH isn't found in this event, set IMPHASHnextEvent to true. This should help handle environments with syslog configs that don't generate IMPHASH
+        #if IMPHASH isn't found in this event, set IMPHASHnextEvent to true. This should help handle environments with sysmon configs that don't generate IMPHASH
         if (!($script:IMPHASHParse)){
             $IMPHASHnextEvent = $true
             $NoIMPHASHCounter++
