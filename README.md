@@ -16,7 +16,9 @@ Summary of what HuntExes does:
  - If the current hash isn't found in the local files, query Malware Bazaar.
 	- If bazaar returns 'no_results', write the Hash to the relevant "Unknown" file.
 	- If bazaar returns 'ok', write the hash to the bad file and Alert.
-  
+
+While I am finding time to write some more thorough documentation, read the code comments.  There might be some additional details/info in them that is useful.
+
 Requirements:
 Logs must be from Sysmon version 10 or later.  Version 10 added a new element, OriginalFileName, to the Process Create events.  HuntExes can't currently parse logs that don't contain it.
 The system running HuntExes must have Sysmon version 10 installed, otherwise get-winevent won't retrieve any details from the events.
