@@ -368,12 +368,18 @@ Function MenuLogOrFile {
             }
             'Q'{
             $script:dtMD5Bad | Export-Csv $Script:MD5BadFile -NoTypeInformation
+	    write-host "File Updated: " $Script:MD5BadFile
             $script:dtSHA256Bad | Export-Csv $Script:SHA256BadFile -NoTypeInformation
+	    write-host "File Updated: " $Script:SHA256BadFile
             $script:dtIMPHASHBad | Export-Csv $script:IMPHASHBadFile -NoTypeInformation
+	    write-host "File Updated: " $script:IMPHASHBadFile
 
             $script:dtMD5Unknown | Export-Csv $Script:MD5UnknownFile -NoTypeInformation
+	    write-host "File Updated: " $Script:MD5UnknownFile
             $script:dtSHA256Unknown | Export-Csv $Script:SHA256UnknownFile -NoTypeInformation
+	    write-host "File Updated: " $Script:SHA256UnknownFile
             $script:dtIMPHASHUnknown | Export-Csv $script:IMPHASHUnknownFile -NoTypeInformation
+	    write-host "File Updated: " $script:IMPHASHUnknownFile
             Exit
             }
         }
