@@ -21,7 +21,9 @@ Requirements:
 Logs must be from Sysmon version 10 or later.  Version 10 added a new element, OriginalFileName, to the Process Create events.  HuntExes can't currently parse logs that don't contain it.
 The system running HuntExes must have Sysmon version 10 installed, otherwise get-winevent won't retrieve any details from the events.
 Your Sysmon Config should have have md5, sha256, and IMPHASH algorithms enabled.  This should be done at the top of your config using the following line:
-<HashAlgorithms>md5,sha256,IMPHASH</HashAlgorithms> 
+
+`<HashAlgorithms>md5,sha256,IMPHASH</HashAlgorithms> `
+
 Testing has shown the parsing to work if some/all of those aren't available (the missing hash(es) will be skipped) without error.  But the focus during testing has been on sysmon logs with all of them enabled.
 
 Note:
