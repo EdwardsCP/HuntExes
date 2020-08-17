@@ -1,6 +1,5 @@
 <#
 HuntExes - Extract Sysmon Event ID 1 (Process Creation) events from either the local Microsoft-Windows-Sysmon/Operational log, or an archived evtx file, extract MD5, SHA256, and IMPHASH hashes of those Processes from the sysmon log, and query an online service (currently Malware Bazaar https://bazaar.abuse.ch/) to identify malicious processes.
-
 Summary of what HuntExes does:
  - Parse out key data elements from sysmon event 1 (Process Create) - UtcTime, Computer, Hashes, Image
  - From the Hashes, regex to parse out the MD5, SHA256, and IMPHASH separately
@@ -15,21 +14,14 @@ Summary of what HuntExes does:
  - If the current hash isn't found in the local files, query Malware Bazaar.
 	- If bazaar returns 'no_results', write the Hash to the relevant "Unknown" file.
 	- If bazaar returns 'ok', write the hash to the bad file and Alert.
-
-
 Requirements:
 Logs must be from Sysmon version 10 or later.  Version 10 added a new element, OriginalFileName, to the Process Create events.  HuntExes can't currently parse logs that don't contain it.
-
 The system running HuntExes must have Sysmon version 10 installed, otherwise get-winevent won't retrieve any details from the events.
-
 Your Sysmon Config should have have md5, sha256, and IMPHASH algorithms enabled.  This should be done at the top of your config using the following line:
 <HashAlgorithms>md5,sha256,IMPHASH</HashAlgorithms> 
 Testing has shown the parsing to work if some/all of those aren't available (the missing hash(es) will be skipped) without error.  But the focus during testing has been on sysmon logs with all of them enabled.
-
-
 Note:
 Testing has shown that an archived .evtx file is changed the first time it is read using get-winevent (which is how HuntExes reads the events).  The file's hash and LastWriteTime change, but the event data does not.  Subsequent reads do not have the same effect.  This is possibly due to Microsoft flipping a bit in the file to indicate it had been read, but I have not confirmed.
-
 #>
 
 
@@ -428,11 +420,17 @@ Function ProcessEvents{
     $UnknownMD5OldCounter = 0
     $UnknownSHA256OldCounter = 0
     $UnknownIMPHASHOldCounter = 0
-    $script:BazaarCounter = 0			  
+    $script:BazaarCounter = 0
+    $PassCount = 0			  
 	foreach ($script:event in $script:events) {
-        #uncomment the next line to write a countdown to the console each time it loops to the top.
-        #write-host $I
-
+        #For every 50th event processed, display a countdown of how many loaded events are left.  Comment out both of these If statements if it's too noisy.
+        If ($PassCount -eq 51){
+            $PassCount = 1
+        }
+        If ($PassCount -eq 50){
+            Write-Host "Remaining Events to process: " $I
+        }
+        
         #prep some variables to be null or false before each pass
         $MD5nextEvent = $false
         $SHA256nextEvent = $false
@@ -635,6 +633,7 @@ Function ProcessEvents{
             }
 
         }
+    $PassCount++
     $I--
     }#end of foreach loop
     write-host "========================="
