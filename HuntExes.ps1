@@ -83,7 +83,7 @@ Function Banner {
     Start-Sleep -m 10
 	write-host "              EEEEEEEEEEEEEEEEEEEEEE                                   _______                        "
     Start-Sleep -m 10
-	write-host "              E::::::::::::::::::::E                                  |v 1.0.1___                     "
+	write-host "              E::::::::::::::::::::E                                  |v 1.1.0___                     "
     Start-Sleep -m 10
 	write-host "              E::::::::::::::::::::E                                  |@EdwardsCP|                    "
     Start-Sleep -m 10
@@ -350,7 +350,7 @@ Function ImportHashCSVs{
 Function MenuLogOrFileOptions {
     Write-Host "========================="
     Write-Host "Do you want to process the Sysmon Operational log from an archived EVTX File, or the live log on the local computer?" -ForegroundColor Yellow
-    Write-Host "[1] Archived EVTX File"
+    Write-Host "[1] Archived EVTX File(s)"
     Write-Host "[2] Live Log"
     Write-Host "[Q] Quit (Saves new Unknown and Bad hash entries to CSVs)"
     Write-Host "========================="
@@ -401,15 +401,22 @@ Function Get-FileName($initialDirectory){
 	$OpenFileDialog = New-Object System.Windows.Forms.OpenFileDialog
 	$OpenFileDialog.initialDirectory = $initialDirectory
 	$OpenFileDialog.filter = "Event Log (*.EVTX)| *.EVTX"
+	$OpenFileDialog.Multiselect = $true
 	$OpenFileDialog.ShowDialog() | Out-Null
-	$OpenFileDialog.filename
+	
+    foreach ($file in $OpenFileDialog.Filenames){
+        $Script:EVTXLogs.Add($file)
+    }
 }
 
 Function ProcessEVTXFile{
-    $Script:EVTXLog = Get-Filename
-    $script:events = Get-WinEvent -Path $Script:EVTXLog -FilterXPath *[System[EventID=1]] #-MaxEvents 500
-    write-host "Total Number of Events Loaded:" $script:events.count
-    ProcessEvents
+	$Script:EVTXLogs = New-Object System.Collections.ArrayList
+    Get-FileName
+	foreach ($Script:EVTXLog in $Script:EVTXLogs){
+		$script:events = Get-WinEvent -Path $Script:EVTXLog -FilterXPath *[System[EventID=1]] #-MaxEvents 500
+		write-host "Total Number of Events Loaded from" $Script:EVTXLog ":" $script:events.count
+		ProcessEvents
+	}
 }
 
 
@@ -512,7 +519,8 @@ Function ProcessEvents{
         if (!($MD5NextEvent)) {
             $Script:MD5Allowed = ($script:dtMD5AllowList.Rows | Where-Object {($_.MD5 -eq $script:MD5)})
             if ($Script:MD5Allowed){
-                write-host "$script:MD5 MD5 allowed true"
+                #next line commented out - too noisy once you start AllowListing hashes from your environment.
+                #write-host "$script:MD5 MD5 allowed true"
                 $AllowedMD5Counter++
                 $MD5nextEvent = $true
             }
@@ -520,7 +528,8 @@ Function ProcessEvents{
         if (!($SHA256nextEvent)){
             $Script:SHA256Allowed = ($script:dtSHA256AllowList.Rows | Where-Object {($_.SHA256 -eq $script:SHA256)})
             if ($Script:SHA256Allowed){
-                write-host "$script:SHA256 SHA256 allowed true"
+                #next line commented out - too noisy once you start AllowListing hashes from your environment.
+                #write-host "$script:SHA256 SHA256 allowed true"
                 $AllowedSHA256Counter++
                 $SHA256nextEvent = $true
             }
@@ -528,7 +537,8 @@ Function ProcessEvents{
         if (!($IMPHASHnextEvent)){
             $Script:IMPHASHAllowed = ($script:dtIMPHASHAllowList.Rows | Where-Object {($_.IMPHASH -eq $script:IMPHASH)})
             if ($Script:IMPHASHAllowed){
-                write-host "$script:IMPHASH IMPHASH allowed true"
+                #next line commented out - too noisy once you start AllowListing hashes from your environment.
+                #write-host "$script:IMPHASH IMPHASH allowed true"
                 $AllowedIMPHASHCounter++
                 $IMPHASHnextEvent = $true
             }
