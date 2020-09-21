@@ -83,7 +83,7 @@ Function Banner {
     Start-Sleep -m 10
 	write-host "              EEEEEEEEEEEEEEEEEEEEEE                                   _______                        "
     Start-Sleep -m 10
-	write-host "              E::::::::::::::::::::E                                  |v 1.1.0___                     "
+	write-host "              E::::::::::::::::::::E                                  |v 1.1.1___                     "
     Start-Sleep -m 10
 	write-host "              E::::::::::::::::::::E                                  |@EdwardsCP|                    "
     Start-Sleep -m 10
@@ -441,6 +441,12 @@ Function ProcessEvents{
     $UnknownMD5OldCounter = 0
     $UnknownSHA256OldCounter = 0
     $UnknownIMPHASHOldCounter = 0
+	$script:NewMD5BadCounter = 0
+	$script:NewSHA256BadCounter = 0
+	$script:NewIMPHASHBadCounter = 0
+	$script:PreviousUnknownMD5BadCounter = 0
+	$script:PreviousUnknownSHA256BadCounter = 0
+	$script:PreviousUnknownIMPHASHBadCounter = 0
     $script:BazaarCounter = 0
     $PassCount = 0			  
 	foreach ($script:event in $script:events) {
@@ -689,6 +695,14 @@ Function ProcessEvents{
     write-host "Total Existing Unknownlisted SHA256 found: "$UnknownSHA256OldCounter
     write-host "Total Existing Unknownlisted IMPHASH found: "$UnknownIMPHASHOldCounter
     write-host " "
+	write-host "Total New Bad MD5 found:"$script:NewMD5BadCounter
+	write-host "Total New Bad SHA256 found:"$script:NewSHA256BadCounter
+	write-host "Total New Bad IMPHASH found:"$script:NewIMPHASHBadCounter
+	write-host " "
+	write-host "Total Existing Unknownlisted MD5 now Bad:"$script:PreviousUnknownMD5BadCounter
+	write-host "Total Existing Unknownlisted SHA256 now Bad:"$script:PreviousUnknownSHA256BadCounter
+	write-host "Total Existing Unknownlisted IMPHASH now Bad:"$script:PreviousUnknownIMPHASHBadCounter
+	write-host " "
     write-host "Total Queries sent to Malware Bazaar: "$script:BazaarCounter
     write-host "========================="
 }#end of ProcessEvents Function
@@ -752,6 +766,7 @@ Function CheckBazaar {
 		            Write-Host "Current Sysmon Event Image" $script:Image
 		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
 		            Write-Host "========================"
+					$script:NewMD5BadCounter++
                 }
             }
             if (!($Script:MD5FirstSeen)){
@@ -781,7 +796,7 @@ Function CheckBazaar {
 		            Write-Host "Current Sysmon Event Image" $script:Image
 		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
 		            Write-Host "========================"
-
+					$script:PreviousUnknownMD5BadCounter++
                     ($script:dtMD5Unknown.Rows | Where-Object {($_.MD5 -eq $script:MD5)}).Delete()
                 }
             }
@@ -825,6 +840,7 @@ Function CheckBazaar {
 		            Write-Host "Current Sysmon Event Image" $script:Image
 		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
 		            Write-Host "========================"
+					$script:NewSHA256BadCounter++
                 }
             }
             if (!($Script:SHA256FirstSeen)){
@@ -852,6 +868,7 @@ Function CheckBazaar {
 		            Write-Host "Current Sysmon Event Image" $script:Image
 		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
 		            Write-Host "========================"
+					$script:PreviousUnknownSHA256BadCounter++
                     ($script:dtSHA256Unknown.Rows | Where-Object {($_.SHA256 -eq $script:SHA256)}).Delete()
                 }
 
@@ -894,6 +911,7 @@ Function CheckBazaar {
 		            Write-Host "Current Sysmon Event Image" $script:Image
 		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
 		            Write-Host "========================"
+					$script:NewIMPHASHBadCounter++
                 }
             }  
             if (!($Script:IMPHASHFirstSeen)){
@@ -921,7 +939,7 @@ Function CheckBazaar {
 		            Write-Host "Current Sysmon Event Image" $script:Image
 		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
 		            Write-Host "========================"
-
+					$script:PreviousUnknownIMPHASHBadCounter++
                     ($script:dtIMPHASHUnknown.Rows | Where-Object {($_.IMPHASH -eq $script:IMPHASH)}).Delete()
                 }
             }
