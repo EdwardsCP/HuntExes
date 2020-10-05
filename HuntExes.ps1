@@ -83,7 +83,7 @@ Function Banner {
     Start-Sleep -m 10
 	write-host "              EEEEEEEEEEEEEEEEEEEEEE                                   _______                        "
     Start-Sleep -m 10
-	write-host "              E::::::::::::::::::::E                                  |v 1.1.1___                     "
+	write-host "              E::::::::::::::::::::E                                  |v 1.1.2___                     "
     Start-Sleep -m 10
 	write-host "              E::::::::::::::::::::E                                  |@EdwardsCP|                    "
     Start-Sleep -m 10
@@ -413,7 +413,7 @@ Function ProcessEVTXFile{
 	$Script:EVTXLogs = New-Object System.Collections.ArrayList
     Get-FileName
 	foreach ($Script:EVTXLog in $Script:EVTXLogs){
-		$script:events = Get-WinEvent -Path $Script:EVTXLog -FilterXPath *[System[EventID=1]] #-MaxEvents 500
+		$script:events = Get-WinEvent -Path $Script:EVTXLog -FilterXPath *[System[EventID=1]] #-MaxEvents 10
 		write-host "Total Number of Events Loaded from" $Script:EVTXLog ":" $script:events.count
 		ProcessEvents
 	}
@@ -709,10 +709,10 @@ Function ProcessEvents{
 
 #DateCheck Function - test to see if the LastLookupDate for an Unknown Hash entry is less than or equal to 7 days old.  Query Bazaar again if it is older.
 Function DateCheck {
-    $script:TodayDatestamp = (get-date).ToString("yyyy-M-dd")
+    $script:TodayDatestamp = (get-date).ToString("yyyy-MM-dd")
 	$script:SevenDaysAgo = (get-date).AddDays(-7)
-	$script:SevenDaysAgoStamp = $script:SevenDaysAgo.ToString("yyyy-M-dd")
-	$script:LastLookupDatestamp = (Get-Date -date $Script:LastLookupDate).toString("yyyy-M-dd")
+	$script:SevenDaysAgoStamp = $script:SevenDaysAgo.ToString("yyyy-MM-dd")
+	$script:LastLookupDatestamp = (Get-Date -date $Script:LastLookupDate).toString("yyyy-MM-dd")
     #If Entry in Unknown table 7 or more days old.  Look it up again.
 	If ($script:LastLookupDatestamp -le $script:SevenDaysAgoStamp){
 		CheckBazaar
@@ -727,7 +727,7 @@ Function DateCheck {
 #CheckBazaar Function
 Function CheckBazaar {
     $script:BazaarCounter++
-    $Script:LastLookupDate = (get-date).ToString("yyyy-M-dd")
+    $Script:LastLookupDate = (get-date).ToString("yyyy-MM-dd")
     $script:bazaaruri = 'https://mb-api.abuse.ch/api/v1/'
     Switch ($script:BazaarLookup){
         'MD5'{
@@ -744,7 +744,7 @@ Function CheckBazaar {
                     $script:NewRow.Image = $script:Image
                     $script:NewRow.Computer = $script:Computer
                     $script:NewRow.EventUtcTime = $script:UtcTime 
-                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-M-dd")
+                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-MM-dd")
                     $script:NewRow.LastLookupDate = $Script:LastLookupDate
                     $script:dtMD5Unknown.Rows.Add($Script:NewRow)
                 }
@@ -755,7 +755,7 @@ Function CheckBazaar {
                     $script:NewRow.Image = $script:Image
                     $script:NewRow.Computer = $script:Computer
                     $script:NewRow.EventUtcTime = $script:UtcTime 
-                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-M-dd")
+                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-MM-dd")
                     $script:NewRow.LastLookupDate = $Script:LastLookupDate
                     $script:dtMD5Bad.Rows.Add($Script:NewRow)
 
@@ -819,7 +819,7 @@ Function CheckBazaar {
                     $script:NewRow.Image = $script:Image
                     $script:NewRow.Computer = $script:Computer
                     $script:NewRow.EventUtcTime = $script:UtcTime 
-                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-M-dd")
+                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-MM-dd")
                     $script:NewRow.LastLookupDate = $Script:LastLookupDate
                     $script:dtSHA256Unknown.Rows.Add($Script:NewRow)
                 }
@@ -829,7 +829,7 @@ Function CheckBazaar {
                     $script:NewRow.Image = $script:Image
                     $script:NewRow.Computer = $script:Computer
                     $script:NewRow.EventUtcTime = $script:UtcTime 
-                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-M-dd")
+                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-MM-dd")
                     $script:NewRow.LastLookupDate = $Script:LastLookupDate
                     $script:dtSHA256Bad.Rows.Add($Script:NewRow)
 
@@ -890,7 +890,7 @@ Function CheckBazaar {
                     $script:NewRow.Image = $script:Image
                     $script:NewRow.Computer = $script:Computer
                     $script:NewRow.EventUtcTime = $script:UtcTime 
-                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-M-dd")
+                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-MM-dd")
                     $script:NewRow.LastLookupDate = $Script:LastLookupDate
                     $script:dtIMPHASHUnknown.Rows.Add($Script:NewRow)
                 }
@@ -900,7 +900,7 @@ Function CheckBazaar {
                     $script:NewRow.Image = $script:Image
                     $script:NewRow.Computer = $script:Computer
                     $script:NewRow.EventUtcTime = $script:UtcTime 
-                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-M-dd")
+                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-MM-dd")
                     $script:NewRow.LastLookupDate = $Script:LastLookupDate
                     $script:dtIMPHASHBad.Rows.Add($Script:NewRow)
 
