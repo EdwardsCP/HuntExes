@@ -1,27 +1,33 @@
 <#
-HuntExes - Extract Sysmon Event ID 1 (Process Creation) events from either the local Microsoft-Windows-Sysmon/Operational log, or an archived evtx file, extract MD5, SHA256, and IMPHASH hashes of those Processes from the sysmon log, and query an online service (currently Malware Bazaar https://bazaar.abuse.ch/) to identify malicious processes.
+HuntExes - Extract Sysmon Event ID 1 (Process Creation) events from either the local Microsoft-Windows-Sysmon/Operational log, or an archived evtx file, extract MD5, SHA1, SHA256, and IMPHASH hashes of those Processes from the sysmon log, and query an online service (currently Malware Bazaar https://bazaar.abuse.ch/) to identify malicious processes.
 Summary of what HuntExes does:
  - Parse out key data elements from sysmon event 1 (Process Create) - UtcTime, Computer, Hashes, Image
- - From the Hashes, regex to parse out the MD5, SHA256, and IMPHASH separately
- - If CSV files don't exist, create 6 CSV Files: MD5Unknown, MD5Bad, SHA256Unknown, SHA256Bad, IMPHASHUnknown, IMPHASHBad, MD5Allowlist, SHA256Allowlist, IMPHASHAllowlist
+ 
+ - From the Hashes, regex to parse out the MD5, SHA1, SHA256, and IMPHASH separately
+ 
+ - If CSV files for storing a history of hashes don't exist, create them: MD5Unknown, MD5Bad, SHA1Unknown, SHA1Bad, SHA256Unknown, SHA256Bad, IMPHASHUnknown, IMPHASHBad, MD5Allowlist, 
+SHA256Allowlist, SHA256Allowlist, IMPHASHAllowlist
  	- Unknown means no results were found from querying bazaar (or future virustotal integration, or whatever other services).  Unknown was picked because "good" would be potentially misleading.
 	- Bad means results were found and the hash matches a sample that's reported malicious.
     - AllowList is to manually enter hashes and a comment so that HuntExes ignores them - it won't query, the Bad or Unknown lists, or Malware Bazaar if it parses these hashes.
+	
  - When looping through the events loaded form the Sysmon log...
-    - If hash is found in the allow file, skip everythign else and move on to the next hash/event
+    - If hash is found in the allow file, skip everything else and move on to the next hash/event
 	- If hash is found in the bad file, write Alert to the console
 	- If hash is found in the Unknown file, check to the datestamp of the last lookup and query Malware Bazaar again if it was more than 7 days ago.  Update the lookup date if the file is still Unknown, or move the hash's entry to the Bad file if there's a hit.
+	
  - If the current hash isn't found in the local files, query Malware Bazaar.
 	- If bazaar returns 'no_results', write the Hash to the relevant "Unknown" file.
 	- If bazaar returns 'ok', write the hash to the bad file and Alert.
+	
 Requirements:
 Logs must be from Sysmon version 10 or later.  Version 10 added a new element, OriginalFileName, to the Process Create events.  HuntExes can't currently parse logs that don't contain it.
 The system running HuntExes must have Sysmon version 10 installed, otherwise get-winevent won't retrieve any details from the events.
-Your Sysmon Config should have have md5, sha256, and IMPHASH algorithms enabled.  This should be done at the top of your config using the following line:
-<HashAlgorithms>md5,sha256,IMPHASH</HashAlgorithms> 
-Testing has shown the parsing to work if some/all of those aren't available (the missing hash(es) will be skipped) without error.  But the focus during testing has been on sysmon logs with all of them enabled.
+
+Previous versions of HuntExes recommended that you have MD5, SHA2556, and IMPHASH algorithms enabled in your sysmon config.  As of version 1.2.0, HuntExes handles SHA1 in addition to those other hashes.  So it can parse every type of hash that Sysmon generates.  The choice is yours.
+
 Note:
-Testing has shown that an archived .evtx file is changed the first time it is read using get-winevent (which is how HuntExes reads the events).  The file's hash and LastWriteTime change, but the event data does not.  Subsequent reads do not have the same effect.  This is possibly due to Microsoft flipping a bit in the file to indicate it had been read, but I have not confirmed.
+Testing has shown that an archived .evtx file is changed the first time it is read using get-winevent (which is how HuntExes reads the events).  The file's hash and LastWriteTime change, but the event data does not.  Subsequent reads do not have the same effect.  This is possibly due to Microsoft flipping a bit in the file to indicate it had been read, but I have not confirmed. UPDATE: This behavior is no longer being seen on my test system.  Possibly changed due to a Windows update.
 #>
 
 
@@ -83,7 +89,7 @@ Function Banner {
     Start-Sleep -m 10
 	write-host "              EEEEEEEEEEEEEEEEEEEEEE                                   _______                        "
     Start-Sleep -m 10
-	write-host "              E::::::::::::::::::::E                                  |v 1.1.2___                     "
+	write-host "              E::::::::::::::::::::E                                  |v 1.2.0___                     "
     Start-Sleep -m 10
 	write-host "              E::::::::::::::::::::E                                  |@EdwardsCP|                    "
     Start-Sleep -m 10
@@ -140,6 +146,12 @@ Function FileCheck {
 	$script:MD5BadFile = "$script:HashesDir\$script:MD5BadCSV"
     $script:MD5AllowListCSV = 'MD5AllowList.csv'
 	$script:MD5AllowListFile = "$script:HashesDir\$script:MD5AllowListCSV"
+	$script:SHA1UnknownCSV = 'SHA1Unknown.csv'
+	$script:SHA1UnknownFile = "$script:HashesDir\$script:SHA1UnknownCSV"
+	$script:SHA1BadCSV = 'SHA1Bad.csv'
+	$script:SHA1BadFile = "$script:HashesDir\$script:SHA1BadCSV"
+	$script:SHA1AllowListCSV = 'SHA1AllowList.csv'
+	$script:SHA1AllowListFile = "$script:HashesDir\$script:SHA1AllowListCSV"
 	$script:SHA256UnknownCSV = 'SHA256Unknown.csv'
 	$script:SHA256UnknownFile = "$script:HashesDir\$script:SHA256UnknownCSV"
 	$script:SHA256BadCSV = 'SHA256Bad.csv'
@@ -164,6 +176,16 @@ Function FileCheck {
 		}
     If (!(Test-Path $script:MD5AllowListFile)) {
 		Set-Content $script:MD5AllowListFile -Value '"MD5","Comment"'
+		}
+	If (!(Test-Path $script:SHA1UnknownFile)) {
+		Set-Content $script:SHA1UnknownFile -Value '"SHA1","Image","Computer","EventUtcTime","HuntExesDatestamp","LastLookupDate"'
+		}
+	If (!(Test-Path $script:SHA1BadFile)) {
+		Set-Content $script:SHA1BadFile -Value '"SHA1","Image","Computer","EventUtcTime","HuntExesDatestamp","LastLookupDate"'
+		}
+
+	If (!(Test-Path $script:SHA1AllowListFile)) {
+		Set-Content $script:SHA1AllowListFile -Value '"SHA1","Comment"'
 		}
 	If (!(Test-Path $script:SHA256UnknownFile)) {
 		Set-Content $script:SHA256UnknownFile -Value '"SHA256","Image","Computer","EventUtcTime","HuntExesDatestamp","LastLookupDate"'
@@ -194,6 +216,9 @@ Function ImportHashCSVs{
     $script:MD5BadImported = Import-Csv $script:MD5BadFile
     $script:MD5UnknownImported = Import-Csv $script:MD5UnknownFile
     $script:MD5AllowListImported = Import-Csv $script:MD5AllowListFile
+	$script:SHA1BadImported = Import-Csv $script:SHA1BadFile
+	$script:SHA1UnknownImported = Import-Csv $script:SHA1UnknownFile
+	$script:SHA1AllowListImported = Import-Csv $script:SHA1AllowListFile
     $script:SHA256BadImported = Import-Csv $script:SHA256BadFile
     $script:SHA256UnknownImported = Import-Csv $script:SHA256UnknownFile
     $script:SHA256AllowListImported = Import-Csv $script:SHA256AllowListFile
@@ -205,6 +230,9 @@ Function ImportHashCSVs{
     $script:dtMD5Bad = New-Object System.Data.DataTable("MD5Bad")
     $script:dtMD5Unknown = New-Object System.Data.DataTable("MD5Unknown")
     $script:dtMD5AllowList = New-Object System.Data.DataTable("MD5AllowList")
+	$script:dtSHA1Bad = New-Object System.Data.DataTable("SHA1Bad")
+	$script:dtSHA1Unknown = New-Object System.Data.DataTable("SHA1Unknown")
+	$script:dtSHA1AllowList = New-Object System.Data.DataTable("SHA1AllowList")
     $script:dtSHA256Bad = New-Object System.Data.DataTable("SHA256Bad")
     $script:dtSHA256Unknown = New-Object System.Data.DataTable("SHA256Unknown")
     $script:dtSHA256AllowList = New-Object System.Data.DataTable("SHA256AllowList")
@@ -215,9 +243,11 @@ Function ImportHashCSVs{
     #Third create Schema (columns)
     #Descriptions - Hash, First Seen Image, First Seen Computer, First Seen EventUtcTime, First Seen HuntexesDatestamp, Most Recent LookupDate
     $script:dtMD5Columns = @("MD5","Image","Computer","EventUtcTime","HuntExesDatestamp","LastLookupDate")
+	$script:dtSHA1Columns = @("SHA1","Image","Computer","EventUtcTime","HuntExesDatestamp","LastLookupDate")
     $script:dtSHA256Columns = @("SHA256","Image","Computer","EventUtcTime","HuntExesDatestamp","LastLookupDate")
     $script:dtIMPHASHColumns = @("IMPHASH","Image","Computer","EventUtcTime","HuntExesDatestamp","LastLookupDate")
     $script:dtMD5AllowListColumns = @("MD5","Comment")
+	$script:dtSHA1AllowListColumns = @("SHA1","Comment")
     $script:dtSHA256AllowListColumns = @("SHA256","Comment")
     $script:dtIMPHASHAllowListColumns = @("IMPHASH","Comment")
 
@@ -232,7 +262,19 @@ Function ImportHashCSVs{
     foreach ($Script:dtMD5AllowListColumn in $Script:dtMD5AllowListColumns){
         $script:dtMD5AllowList.Columns.Add($script:dtMD5AllowListColumn) | Out-Null
     }
-
+	
+	foreach ($script:dtSHA1Column in $script:dtSHA1Columns){
+		$script:dtSHA1Bad.Columns.Add($script:dtSHA1Column) | Out-Null
+		}
+	
+	foreach ($script:dtSHA1Column in $script:dtSHA1Columns){
+		$script:dtSHA1Unknown.Columns.Add($script:dtSHA1Column) | Out-Null
+		}
+	
+	foreach ($Script:dtSHA1AllowListColumn in $Script:dtSHA1AllowListColumns){
+        $script:dtSHA1AllowList.Columns.Add($script:dtSHA1AllowListColumn) | Out-Null
+		}
+		
     foreach ($script:dtSHA256Column in $script:dtSHA256Columns){
         $script:dtSHA256Bad.Columns.Add($script:dtSHA256Column) | Out-Null
     }
@@ -281,6 +323,29 @@ Function ImportHashCSVs{
         $script:dtMD5AllowList.Rows.Add($script:row) | Out-Null
     }
 
+    foreach ($script:line in $script:SHA1BadImported){
+        $script:row = $script:dtSHA1Bad.NewRow()
+        Foreach ($script:dtSHA1Column in $script:dtSHA1Columns){
+            $script:row[$script:dtSHA1Column] = $script:line.$script:dtSHA1Column	
+		}
+		$script:dtSHA1Bad.Rows.Add($script:row) | Out-Null
+	}
+
+    foreach ($script:line in $script:SHA1UnknownImported){
+        $script:row = $script:dtSHA1Unknown.NewRow()
+        foreach ($script:dtSHA1Column in $script:dtSHA1Columns){
+            $script:row[$script:dtSHA1Column] = $script:line.$script:dtSHA1Column
+		}
+        $script:dtSHA1Unknown.Rows.Add($script:row) | Out-Null
+	}
+	
+	foreach ($script:line in $script:SHA1AllowListImported){
+		$script:row = $script:dtSHA1AllowList.NewRow()
+		foreach ($script:dtSHA1AllowListColumn in $script:dtSHA1AllowListColumns){
+			$script:row[$script:dtSHA1AllowListColumn] = $script:line.$script:dtSHA1AllowListColumn
+		}
+		$script:dtSHA1AllowList.Rows.Add($script:row) | Out-Null
+	}
 
     foreach ($script:line in $script:SHA256BadImported){
         $script:row = $script:dtSHA256Bad.NewRow()
@@ -331,13 +396,16 @@ Function ImportHashCSVs{
     write-host " "
     Write-Host "========================="
     Write-Host "Total AllowListed MD5 loaded into memory from" $Script:MD5AllowListFile ":" $script:dtMD5AllowList.Rows.Count
+	Write-Host "Total AllowListed SHA1 loaded into memory from" $script:SHA1AllowListFile ":" $script:dtSHA1AllowList.Rows.Count
     Write-Host "Total AllowListed SHA256 loaded into memory from" $script:SHA256AllowListFile ":" $script:dtSHA256AllowList.Rows.Count
     Write-Host "Total AllowListed IMPHASH loaded into memory from" $script:IMPHASHAllowListFile ":" $script:dtIMPHASHAllowList.Rows.Count
     Write-Host "Total BadListed MD5 loaded into memory from" $script:MD5BadFile ":" $script:dtMD5Bad.Rows.Count
+	Write-Host "Total BadListed SHA1 loaded into memory from" $script:SHA1BadFile ":" $script:dtSHA1Bad.Rows.Count
     Write-Host "Total BadListed SHA256 loaded into memory from" $script:SHA256BadFile ":" $script:dtSHA256Bad.Rows.Count
     Write-Host "Total BadListed IMPHASH loaded into memory from" $script:IMPHASHBadFile ":" $script:dtIMPHASHBad.Rows.Count
     Write-Host "Total UnknownListed MD5 loaded into memory from" $script:MD5UnknownFile ":" $script:dtMD5Unknown.Rows.Count
-    Write-Host "Total UnknownListed SHA256loaded into memory from" $script:SHA256UnknownFile ":" $script:dtSHA256Unknown.Rows.Count
+	Write-Host "Total UnknownListed SHA1 loaded into memory from" $script:SHA1UnknownFile ":" $script:dtSHA1Unknown.Rows.Count
+    Write-Host "Total UnknownListed SHA256 loaded into memory from" $script:SHA256UnknownFile ":" $script:dtSHA256Unknown.Rows.Count
     Write-Host "Total UnknownListed IMPHASH loaded into memory from" $script:IMPHASHUnknownFile ":" $script:dtIMPHASHUnknown.Rows.Count
     Write-Host "========================="
     write-host " "
@@ -374,18 +442,22 @@ Function MenuLogOrFile {
             }
             'Q'{
             $script:dtMD5Bad | Export-Csv $Script:MD5BadFile -NoTypeInformation
-	    write-host "File Updated: " $Script:MD5BadFile
+			write-host "File Updated: " $Script:MD5BadFile
+			$script:dtSHA1Bad | Export-Csv $Script:SHA1BadFile -NoTypeInformation
+			write-host "File Updated: " $Script:SHA1BadFile
             $script:dtSHA256Bad | Export-Csv $Script:SHA256BadFile -NoTypeInformation
-	    write-host "File Updated: " $Script:SHA256BadFile
+			write-host "File Updated: " $Script:SHA256BadFile
             $script:dtIMPHASHBad | Export-Csv $script:IMPHASHBadFile -NoTypeInformation
-	    write-host "File Updated: " $script:IMPHASHBadFile
+			write-host "File Updated: " $script:IMPHASHBadFile
 
             $script:dtMD5Unknown | Export-Csv $Script:MD5UnknownFile -NoTypeInformation
-	    write-host "File Updated: " $Script:MD5UnknownFile
+			write-host "File Updated: " $Script:MD5UnknownFile
+			$script:dtSHA1Unknown | Export-Csv $Script:SHA1UnknownFile -NoTypeInformation
+			write-host "File Updated: " $Script:SHA1UnknownFile
             $script:dtSHA256Unknown | Export-Csv $Script:SHA256UnknownFile -NoTypeInformation
-	    write-host "File Updated: " $Script:SHA256UnknownFile
+			write-host "File Updated: " $Script:SHA256UnknownFile
             $script:dtIMPHASHUnknown | Export-Csv $script:IMPHASHUnknownFile -NoTypeInformation
-	    write-host "File Updated: " $script:IMPHASHUnknownFile
+			write-host "File Updated: " $script:IMPHASHUnknownFile
             Exit
             }
         }
@@ -427,24 +499,31 @@ Function ProcessEVTXFile{
 Function ProcessEvents{
     $I = $script:events.count
     $NoMD5Counter = 0
+	$NoSHA1Counter = 0
     $NoSHA256Counter = 0
     $NoIMPHASHCounter = 0
     $AllowedMD5Counter = 0
+	$AllowedSHA1Counter = 0
     $AllowedSHA256Counter = 0
     $AllowedIMPHASHCounter = 0
     $BadMD5Counter = 0
+	$BadSHA1Counter = 0
     $BadSHA256Counter = 0
     $BadIMPHASHCounter = 0
     $UnknownMD5NewCounter = 0
+	$UnknownSHA1NewCounter = 0
     $UnknownSHA256NewCounter = 0
     $UnknownIMPHASHNewCounter = 0
     $UnknownMD5OldCounter = 0
+	$UnknownSHA1OldCounter = 0
     $UnknownSHA256OldCounter = 0
     $UnknownIMPHASHOldCounter = 0
 	$script:NewMD5BadCounter = 0
+	$script:NewSHA1BadCounter = 0
 	$script:NewSHA256BadCounter = 0
 	$script:NewIMPHASHBadCounter = 0
 	$script:PreviousUnknownMD5BadCounter = 0
+	$script:PreviousUnknownSHA1BadCounter = 0
 	$script:PreviousUnknownSHA256BadCounter = 0
 	$script:PreviousUnknownIMPHASHBadCounter = 0
     $script:BazaarCounter = 0
@@ -460,21 +539,27 @@ Function ProcessEvents{
         
         #prep some variables to be null or false before each pass
         $MD5nextEvent = $false
+		$SHA1nextEvent = $false
         $SHA256nextEvent = $false
         $IMPHASHnextEvent = $false
         $Script:MD5FirstSeen = $false
+		$Script:SHA1FirstSeen = $false
         $Script:SHA256FirstSeen = $false
         $Script:IMPHASHFirstSeen = $false
         $script:BazaarMD5 = $false
+		$script:BazaarSHA1 = $false
         $script:BazaarSHA256 = $false
         $script:BazaarIMPHASH  = $false
         Clear-Variable -Name MD5Allowed -Scope Script -ErrorAction SilentlyContinue
+		Clear-Variable -Name SHA1Allowed -Scope Script -ErrorAction SilentlyContinue
         Clear-Variable -Name SHA256Allowed -Scope Script -ErrorAction SilentlyContinue
-        Clear-Variable -Name IMPHASHAllowed -Scope Script -ErrorAction SilentlyContinue
+		Clear-Variable -Name IMPHASHAllowed -Scope Script -ErrorAction SilentlyContinue
         Clear-Variable -Name MD5Bad -Scope Script -ErrorAction SilentlyContinue
+		Clear-Variable -Name SHA1Bad -Scope Script -ErrorAction SilentlyContinue
         Clear-Variable -Name SHA256Bad -Scope Script -ErrorAction SilentlyContinue
         Clear-Variable -Name IMPHASHBad -Scope Script -ErrorAction SilentlyContinue
         Clear-Variable -Name MD5Unknown -Scope Script -ErrorAction SilentlyContinue
+		Clear-Variable -Name SHA1Unknown -Scope Script -ErrorAction SilentlyContinue
         Clear-Variable -Name SHA256Unknown -Scope Script -ErrorAction SilentlyContinue
         Clear-Variable -Name IMPHASHUnknown -Scope Script -ErrorAction SilentlyContinue
         Clear-Variable -Name HashfileEntryDate -Scope Script -ErrorAction SilentlyContinue
@@ -497,6 +582,18 @@ Function ProcessEvents{
             #write-host "No MD5 parsed from this event" $script:UtcTime $script:Computer $script:Image
         }
 
+		$script:SHA1Parse = $script:Hashes -match '^.*SHA1=([A-F0-9]{40}).*$'
+		#if SHA1 is found, load it to the variable to continue processing
+		if ($script:SHA1Parse){
+			$script:SHA1 = $Matches[1]
+		}
+		#if SHA1 isn't found in this event, set SHA1nextEvent to true. This should help handle environments with sysmon configs that don't generate SHA1
+		if (!($script:SHA1Parse)){
+            $SHA1nextEvent = $true
+            $NoSHA1Counter++
+            #write-host "No SHA1 parsed from this event" $script:UtcTime $script:Computer $script:Image
+		}
+		
         $script:SHA256Parse = $script:Hashes -match '^.*SHA256=([A-F0-9]{64}).*$'
         #if SHA256 is found, load it to the variable to continue processing
         if ($script:SHA256Parse){
@@ -530,8 +627,17 @@ Function ProcessEvents{
                 $AllowedMD5Counter++
                 $MD5nextEvent = $true
             }
-        }
-        if (!($SHA256nextEvent)){
+		}
+        if (!($SHA1nextEvent)){
+            $Script:SHA1Allowed = ($script:dtSHA1AllowList.Rows | Where-Object {($_.SHA1 -eq $script:SHA1)})
+            if ($Script:SHA1Allowed){
+                #next line commented out - too noisy once you start AllowListing hashes from your environment.
+                #write-host "$script:SHA1 SHA1 allowed true"
+                $AllowedSHA1Counter++
+                $SHA1nextEvent = $true
+			}
+		}
+		if (!($SHA256nextEvent)){
             $Script:SHA256Allowed = ($script:dtSHA256AllowList.Rows | Where-Object {($_.SHA256 -eq $script:SHA256)})
             if ($Script:SHA256Allowed){
                 #next line commented out - too noisy once you start AllowListing hashes from your environment.
@@ -564,7 +670,20 @@ Function ProcessEvents{
                 $MD5NextEvent = $true
             }
         }
-
+        if (!($SHA1NextEvent)) {
+            $Script:SHA1Bad = ($script:dtSHA1Bad.Rows | Where-Object {($_.SHA1 -eq $script:SHA1)})
+            if ($Script:SHA1Bad){
+                $Script:HashfileEntryDate = $Script:SHA1Bad.HuntExesDatestamp
+				Write-Host "========================"
+				write-host "SHA1 "$script:SHA1" was found in Known Bad list with original HuntExes Datestamp "$script:HashFileEntryDate  -ForegroundColor Yellow
+				Write-Host "Current Sysmon Event Computer" $script:Computer
+		        Write-Host "Current Sysmon Event Image" $script:Image
+		        Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
+		        Write-Host "========================"
+                $BadSHA1Counter++
+                $SHA1NextEvent = $true
+			}
+		}
         if (!($SHA256NextEvent)) {
             $Script:SHA256Bad = ($script:dtSHA256Bad.Rows | Where-Object {($_.SHA256 -eq $script:SHA256)})
             if ($Script:SHA256Bad){
@@ -617,7 +736,30 @@ Function ProcessEvents{
                 CheckBazaar
             }
 
-                        }
+        }
+		
+		if (!($SHA1NextEvent)) {
+			$Script:SHA1Unknown = ($script:dtSHA1Unknown.Rows | Where-Object {($_.SHA1 -eq $script:SHA1)})
+
+			#set BazaarLookup SHA1 so the switch in CheckBazaar does SHA1 processing if we get to it
+			$script:BazaarLookup = "SHA1"
+
+			#if Hash is found in Unknown Datatable, do the DateCheck
+			if ($Script:SHA1Unknown){
+				$Script:LastLookupDate = $Script:SHA1Unknown.LastLookupDate
+				$Script:SHA1FirstSeen = $false
+				$UnknownSHA1OldCounter++
+				datecheck
+			}
+			#if Hash is not found in Unknown Datatable, set FirstSeen to true, then CheckBazaar
+	        if (!($script:SHA1Unknown)){
+	            $Script:SHA1FirstSeen = $true
+	            $UnknownSHA1NewCounter++
+				CheckBazaar
+			}
+			
+		}
+		
         if (!($SHA256NextEvent)) {
             $Script:SHA256Unknown = ($script:dtSHA256Unknown.Rows | Where-Object {($_.SHA256 -eq $script:SHA256)})
 
@@ -676,30 +818,37 @@ Function ProcessEvents{
     write-host "The hit counts below are totals, not unique hits per hash."  -ForegroundColor Yellow
     write-host " "
     write-host "Total Events with No MD5 parsed: " $NoMD5Counter
+	write-host "Total Events with No SHA1 parsed: " $NoSHA1Counter
     write-host "Total Events with No SHA256 parsed: " $NoSHA256Counter
     write-host "Total Events with No IMPHASH parsed: " $NoIMPHASHCounter
     write-host " "
     write-host "Total Allowlisted MD5 found: " $AllowedMD5Counter
+	write-host "Total Allowlisted SHA1 found: "$AllowedSHA1Counter
     write-host "Total Allowlisted SHA256 found: "$AllowedSHA256Counter
     write-host "Total Allowlisted IMPHASH found: "$AllowedIMPHASHCounter
     write-host " "
     write-host "Total Badlisted MD5 found: "$BadMD5Counter
+	write-host "Total Badlisted SHA1 found: "$BadSHA1Counter
     write-host "Total Badlisted SHA256 found: "$BadSHA256Counter
     write-host "Total Badlisted IMPHASH found: "$BadIMPHASHCounter
     write-host " "
     write-host "Total New Unknown MD5 found: "$UnknownMD5NewCounter
+	write-host "Total New Unknown SHA1 found: "$UnknownSHA1NewCounter
     write-host "Total New Unknown SHA256 found: "$UnknownSHA256NewCounter
     write-host "Total New Unknown IMPHASH found: "$UnknownIMPHASHNewCounter
     write-host " "
     write-host "Total Existing Unknownlisted MD5 found: "$UnknownMD5OldCounter
+	write-host "Total Existing Unknownlisted SHA1 found: "$UnknownSHA1OldCounter
     write-host "Total Existing Unknownlisted SHA256 found: "$UnknownSHA256OldCounter
     write-host "Total Existing Unknownlisted IMPHASH found: "$UnknownIMPHASHOldCounter
     write-host " "
 	write-host "Total New Bad MD5 found:"$script:NewMD5BadCounter
+	write-host "Total New Bad SHA1 found:"$script:NewSHA1BadCounter
 	write-host "Total New Bad SHA256 found:"$script:NewSHA256BadCounter
 	write-host "Total New Bad IMPHASH found:"$script:NewIMPHASHBadCounter
 	write-host " "
 	write-host "Total Existing Unknownlisted MD5 now Bad:"$script:PreviousUnknownMD5BadCounter
+	write-host "Total Existing Unknownlisted SHA1 now Bad:"$script:PreviousUnknownSHA1BadCounter
 	write-host "Total Existing Unknownlisted SHA256 now Bad:"$script:PreviousUnknownSHA256BadCounter
 	write-host "Total Existing Unknownlisted IMPHASH now Bad:"$script:PreviousUnknownIMPHASHBadCounter
 	write-host " "
@@ -806,6 +955,72 @@ Function CheckBazaar {
             #after processing, set BazaarLookup to none so we know it's not left set on a valid option for a later pass through the loop
             $script:BazaarLookup = "none"
         }
+
+        'SHA1'{
+            $script:SHA1query = "query=get_info&hash=$script:SHA1&limit=1"
+ 		    $script:SHA1request = invoke-webrequest -Uri $script:bazaaruri -Method POST -Body $script:SHA1query
+ 		    $script:SHA1RequestJson = $script:SHA1request.Content
+ 		    $script:SHA1RequestResult = ConvertFrom-Json $script:SHA1RequestJson
+ 		    $script:SHA1RequestResultData = $script:SHA1RequestResult.query_status
+            If ($Script:SHA1FirstSeen){
+                If ($script:SHA1RequestResultData -match 'hash_not_found') {
+                    $script:NewRow = $script:dtSHA1Unknown.NewRow()
+                    $script:NewRow.SHA1 = $script:SHA1
+					$script:NewRow.Image = $script:Image
+                    $script:NewRow.Computer = $script:Computer
+                    $script:NewRow.EventUtcTime = $script:UtcTime 
+                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-MM-dd")
+                    $script:NewRow.LastLookupDate = $Script:LastLookupDate
+					$script:dtSHA1Unknown.Rows.Add($Script:NewRow)
+				}
+                If ($script:SHA1RequestResultData -match 'ok') {
+                    $script:NewRow = $script:dtSHA1Bad.NewRow()
+                    $script:NewRow.SHA1 = $script:SHA1
+                    $script:NewRow.Image = $script:Image
+                    $script:NewRow.Computer = $script:Computer
+                    $script:NewRow.EventUtcTime = $script:UtcTime 
+                    $script:NewRow.HuntExesDatestamp = (get-date).ToString("yyyy-MM-dd")
+                    $script:NewRow.LastLookupDate = $Script:LastLookupDate
+					$script:dtSHA1Bad.Rows.Add($Script:NewRow)
+					
+                    Write-Host "========================"
+                    write-host "NEWLY DETECTED HASH IS IN MalwareBazaar - POTENTIALLY MALICIOUS!" -ForegroundColor Yellow
+					write-host "SHA1 "$script:SHA1
+					Write-Host "Current Sysmon Event Computer" $script:Computer
+		            Write-Host "Current Sysmon Event Image" $script:Image
+		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
+		            Write-Host "========================"
+					$script:NewSHA1BadCounter++
+				}
+			}
+	        if (!($Script:SHA1FirstSeen)){
+	            If ($script:SHA1RequestResultData -match 'hash_not_found') {
+	                ($script:dtSHA1Unknown.Rows | Where-Object {($_.SHA1 -eq $script:SHA1)}).LastLookupDate = $Script:LastLookupDate
+				}
+	            If ($script:SHA1RequestResultData -match 'ok') {
+	                $script:OldRow = ($script:dtSHA1Unknown.Rows | Where-Object {($_.SHA1 -eq $script:SHA1)})
+	                $script:NewRow = $script:dtSHA1Bad.NewRow()
+	                $script:NewRow.SHA1 = $script:OldRow.SHA1
+					$script:NewRow.Image = $script:OldRow.Image
+					$script:NewRow.Computer = $script:OldRow.Computer
+					$script:NewRow.EventUtcTime = $script:OldRow.UtcTime 
+					$script:NewRow.HuntExesDatestamp = $script:OldRow.HuntExesDatestamp
+					$script:NewRow.LastLookupDate = $Script:LastLookupDate
+					$script:dtSHA1Bad.Rows.Add($Script:NewRow)
+						
+                    Write-Host "========================"
+                    write-host "PREVIOUSLY UNKNOWN HASH IS NOW IN MalwareBazaar - POTENTIALLY MALICIOUS!" -ForegroundColor Yellow
+					write-host "SHA1 "$script:SHA1
+					Write-Host "Current Sysmon Event Computer" $script:Computer
+		            Write-Host "Current Sysmon Event Image" $script:Image
+		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
+		            Write-Host "========================"
+					$script:PreviousUnknownSHA1BadCounter++
+				}
+			}
+		#after processing, set BazaarLookup to none so we know it's not left set on a valid option for a later pass through the loop
+        $script:BazaarLookup = "none"
+		}
         'SHA256'{
             $script:SHA256query = "query=get_info&hash=$script:SHA256&limit=1"
 		    $script:SHA256request = invoke-webrequest -Uri $script:bazaaruri -Method POST -Body $script:SHA256query
@@ -841,6 +1056,7 @@ Function CheckBazaar {
 		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
 		            Write-Host "========================"
 					$script:NewSHA256BadCounter++
+					($script:dtSHA1Unknown.Rows | Where-Object {($_.SHA1 -eq $script:SHA1)}).Delete()
                 }
             }
             if (!($Script:SHA256FirstSeen)){
