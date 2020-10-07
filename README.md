@@ -1,6 +1,6 @@
 # HuntExes.ps1
 
-HuntExes - Extract Sysmon Event ID 1 (Process Creation) events from either the local Microsoft-Windows-Sysmon/Operational log, or an archived evtx file, extract MD5, SHA1, SHA256, and IMPHASH hashes of those Processes from the sysmon log, and query an online service (currently Malware Bazaar https://bazaar.abuse.ch/) to identify malicious processes.
+HuntExes - Extract Sysmon Event ID 1 (Process Creation) events from either the local Microsoft-Windows-Sysmon/Operational log, or archived evtx files, extract MD5, SHA1, SHA256, and IMPHASH hashes of those Processes from the sysmon log, and query Malware Bazaar (https://bazaar.abuse.ch/) to identify malicious processes.
 
 Summary of what HuntExes does:
  - Parse out key data elements from sysmon event 1 (Process Create) - UtcTime, Computer, Hashes, Image
@@ -26,7 +26,7 @@ Requirements:
 Logs must be from Sysmon version 10 or later.  Version 10 added a new element, OriginalFileName, to the Process Create events.  HuntExes can't currently parse logs that don't contain it.
 The system running HuntExes must have Sysmon version 10 installed, otherwise get-winevent won't retrieve any details from the events.
 
-Previous versions of HuntExes recommended that you have MD5, SHA2556, and IMPHASH algorithms enabled in your sysmon config.  As of version 1.2.0, HuntExes handles SHA1 in addition to those other hashes.  So it can parse every type of hash that Sysmon generates.  The choice is yours.
+Previous versions of HuntExes recommended that you have MD5, SHA256, and IMPHASH algorithms enabled in your sysmon config.  As of version 1.2.0, HuntExes handles SHA1 in addition to those other hashes.  So it can parse every type of hash that Sysmon generates.  The choice is yours.
 
 Note:
 Testing has shown that an archived .evtx file is changed the first time it is read using get-winevent (which is how HuntExes reads the events).  The file's hash and LastWriteTime change, but the event data does not.  Subsequent reads do not have the same effect.  This is possibly due to Microsoft flipping a bit in the file to indicate it had been read, but I have not confirmed. UPDATE: This behavior is no longer being seen on my test system as of Oct 2020.  Possibly changed due to a Windows update.
