@@ -13,7 +13,7 @@ SHA256Allowlist, SHA256Allowlist, IMPHASHAllowlist
 	- Bad means results were found and the hash matches a sample that's reported malicious.
     - AllowList is to manually enter hashes and a comment so that HuntExes ignores them - it won't query, the Bad or Unknown lists, or Malware Bazaar if it parses these hashes.
 	
- - When looping through the events loaded form the Sysmon log...
+ - When looping through the events loaded from the Sysmon log...
     - If hash is found in the allow file, skip everything else and move on to the next hash/event
 	- If hash is found in the bad file, write Alert to the console
 	- If hash is found in the Unknown file, check to the datestamp of the last lookup and query Malware Bazaar again if it was more than 7 days ago.  Update the lookup date if the file is still Unknown, or move the hash's entry to the Bad file if there's a hit.
