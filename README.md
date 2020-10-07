@@ -41,7 +41,7 @@ Several archived .evtx files are opened...
 
 ![Example2](/Example2.png)
 
-The total number of files loaded is output to the console.  The total number of Events ID 1's in the first evtx is output to the console.  Events are processed, and the remaining events to proceess is output to the console every time 50 events have been completed.
+The total number of files loaded is output to the console.  The total number of Events ID 1's in the first evtx is output to the console.  Events are processed, and the number of remaining events to process is output to the console every time 50 events have been completed.
 
 ![Example3](/Example3.png)
 
