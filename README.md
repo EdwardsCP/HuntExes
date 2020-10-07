@@ -23,8 +23,8 @@ SHA256Allowlist, SHA256Allowlist, IMPHASHAllowlist
 	- If bazaar returns 'ok', write the hash to the bad file and Alert.
 	
 Requirements:
-Logs must be from Sysmon version 10 or later.  Version 10 added a new element, OriginalFileName, to the Process Create events.  HuntExes can't currently parse logs that don't contain it.
-The system running HuntExes must have Sysmon version 10 installed, otherwise get-winevent won't retrieve any details from the events.
+ - Logs must be from Sysmon version 10 or later.  Version 10 added a new element, OriginalFileName, to the Process Create events.  HuntExes can't currently parse logs that don't contain it.
+ - The system running HuntExes must have Sysmon version 10 installed, otherwise get-winevent won't retrieve any details from the events.
 
 Previous versions of HuntExes recommended that you have MD5, SHA256, and IMPHASH algorithms enabled in your sysmon config.  As of version 1.2.0, HuntExes handles SHA1 in addition to those other hashes.  So it can parse every type of hash that Sysmon generates.  The choice is yours.
 
