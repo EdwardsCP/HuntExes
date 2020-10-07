@@ -31,16 +31,28 @@ Previous versions of HuntExes recommended that you have MD5, SHA256, and IMPHASH
 Note:
 Testing has shown that an archived .evtx file is changed the first time it is read using get-winevent (which is how HuntExes reads the events).  The file's hash and LastWriteTime change, but the event data does not.  Subsequent reads do not have the same effect.  This is possibly due to Microsoft flipping a bit in the file to indicate it had been read, but I have not confirmed. UPDATE: This behavior is no longer being seen on my test system as of Oct 2020.  Possibly changed due to a Windows update.
 
-The console output has been modified since the example screenshots below were created.  But they should still give you a general idea of what to expect.
+Screenshots from Version 1.2.0...
+
+HuntExes.ps1 is run, it imports csv files from .\Hashes\ into tables
 
 ![Example1](/Example1.png)
 
+Several archived .evtx files are opened...
+
 ![Example2](/Example2.png)
+
+The total number of files loaded is output to the console.  The total number of Events ID 1's in the first evtx is output to the console.  Events are processed, and the remaining events to proceess is output to the console every time 50 events have been completed.
 
 ![Example3](/Example3.png)
 
+When a newly detected hash is matched to Malware Bazaar, the details are output to the console.  Likewise, when a hash matches one from the local Bad files/tables, the details are output to the console.
+
 ![Example4](/Example4.png)
 
+When all of the events from an evtx are finished processing, summary data about that file is output to the console.  If there are additional files to process, the script moves on to loading those events.
+
 ![Example5](/Example5.png)
+
+The flowchart below is provided to help with ongoing development.  It's a general overview of how HuntExes works.
 
 ![HuntExesFlow](/HuntExesFlow.png)
