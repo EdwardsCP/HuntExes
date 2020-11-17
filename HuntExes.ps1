@@ -89,7 +89,7 @@ Function Banner {
     Start-Sleep -m 10
 	write-host "              EEEEEEEEEEEEEEEEEEEEEE                                   _______                        "
     Start-Sleep -m 10
-	write-host "              E::::::::::::::::::::E                                  |v 1.2.0___                     "
+	write-host "              E::::::::::::::::::::E                                  |v 1.2.1___                     "
     Start-Sleep -m 10
 	write-host "              E::::::::::::::::::::E                                  |@EdwardsCP|                    "
     Start-Sleep -m 10
@@ -477,8 +477,9 @@ Function Get-FileName($initialDirectory){
 	$OpenFileDialog.ShowDialog() | Out-Null
 	
     foreach ($file in $OpenFileDialog.Filenames){
-        $Script:EVTXLogs.Add($file)
-    }
+        $Script:EVTXLogs.Add($file) | Out-Null
+	}
+	Write-Host "Number of files loaded:" $EVTXLogs.Count
 }
 
 Function ProcessEVTXFile{
@@ -930,7 +931,7 @@ Function CheckBazaar {
                     $script:NewRow.MD5 = $script:OldRow.MD5
                     $script:NewRow.Image = $script:OldRow.Image
                     $script:NewRow.Computer = $script:OldRow.Computer
-                    $script:NewRow.EventUtcTime = $script:OldRow.UtcTime 
+                    $script:NewRow.EventUtcTime = $script:OldRow.EventUtcTime 
                     $script:NewRow.HuntExesDatestamp = $script:OldRow.HuntExesDatestamp
                     $script:NewRow.LastLookupDate = $Script:LastLookupDate
                     $script:dtMD5Bad.Rows.Add($Script:NewRow)
@@ -940,7 +941,7 @@ Function CheckBazaar {
                     write-host "MD5 "$script:MD5
                     write-host "This HuntExes Environment Original Sysmon Event Computer" $script:OldRow.Computer
                     write-host "This HuntExes Environment Original Sysmon Event Image" $script:OldRow.Image
-                    write-host "This HuntExes Environment Original Sysmon Event UtcTime" $script:OldRow.UtcTime
+                    write-host "This HuntExes Environment Original Sysmon Event UtcTime" $script:OldRow.EventUtcTime
 		            Write-Host "Current Sysmon Event Computer" $script:Computer
 		            Write-Host "Current Sysmon Event Image" $script:Image
 		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
@@ -1003,7 +1004,7 @@ Function CheckBazaar {
 	                $script:NewRow.SHA1 = $script:OldRow.SHA1
 					$script:NewRow.Image = $script:OldRow.Image
 					$script:NewRow.Computer = $script:OldRow.Computer
-					$script:NewRow.EventUtcTime = $script:OldRow.UtcTime 
+					$script:NewRow.EventUtcTime = $script:OldRow.EventUtcTime 
 					$script:NewRow.HuntExesDatestamp = $script:OldRow.HuntExesDatestamp
 					$script:NewRow.LastLookupDate = $Script:LastLookupDate
 					$script:dtSHA1Bad.Rows.Add($Script:NewRow)
@@ -1069,7 +1070,7 @@ Function CheckBazaar {
                     $script:NewRow.SHA256 = $script:OldRow.SHA256
                     $script:NewRow.Image = $script:OldRow.Image
                     $script:NewRow.Computer = $script:OldRow.Computer
-                    $script:NewRow.EventUtcTime = $script:OldRow.UtcTime 
+                    $script:NewRow.EventUtcTime = $script:OldRow.EventUtcTime 
                     $script:NewRow.HuntExesDatestamp = $script:OldRow.HuntExesDatestamp
                     $script:NewRow.LastLookupDate = $Script:LastLookupDate
                     $script:dtSHA256Bad.Rows.Add($Script:NewRow)
@@ -1079,7 +1080,7 @@ Function CheckBazaar {
                     write-host "SHA256 "$script:SHA256
                     write-host "This HuntExes Environment Original Sysmon Event Computer" $script:OldRow.Computer
                     write-host "This HuntExes Environment Original Sysmon Event Image" $script:OldRow.Image
-                    write-host "This HuntExes Environment Original Sysmon Event UtcTime" $script:OldRow.UtcTime
+                    write-host "This HuntExes Environment Original Sysmon Event UtcTime" $script:OldRow.EventUtcTime
 		            Write-Host "Current Sysmon Event Computer" $script:Computer
 		            Write-Host "Current Sysmon Event Image" $script:Image
 		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
@@ -1140,7 +1141,7 @@ Function CheckBazaar {
                     $script:NewRow.IMPHASH = $script:OldRow.IMPHASH
                     $script:NewRow.Image = $script:OldRow.Image
                     $script:NewRow.Computer = $script:OldRow.Computer
-                    $script:NewRow.EventUtcTime = $script:OldRow.UtcTime 
+                    $script:NewRow.EventUtcTime = $script:OldRow.EventUtcTime 
                     $script:NewRow.HuntExesDatestamp = $script:OldRow.HuntExesDatestamp
                     $script:NewRow.LastLookupDate = $Script:LastLookupDate
                     $script:dtIMPHASHBad.Rows.Add($Script:NewRow)
@@ -1150,7 +1151,7 @@ Function CheckBazaar {
                     write-host "IMPHASH "$script:IMPHASH
                     write-host "This HuntExes Environment Original Sysmon Event Computer" $script:OldRow.Computer
                     write-host "This HuntExes Environment Original Sysmon Event Image" $script:OldRow.Image
-                    write-host "This HuntExes Environment Original Sysmon Event UtcTime" $script:OldRow.UtcTime
+                    write-host "This HuntExes Environment Original Sysmon Event UtcTime" $script:OldRow.EventUtcTime
 		            Write-Host "Current Sysmon Event Computer" $script:Computer
 		            Write-Host "Current Sysmon Event Image" $script:Image
 		            Write-Host "Current Sysmon Event UtcTime" $script:UtcTime
