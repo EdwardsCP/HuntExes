@@ -89,7 +89,7 @@ Function Banner {
     Start-Sleep -m 10
 	write-host "              EEEEEEEEEEEEEEEEEEEEEE                                   _______                        "
     Start-Sleep -m 10
-	write-host "              E::::::::::::::::::::E                                  |v 1.2.1___                     "
+	write-host "              E::::::::::::::::::::E                                  |v 1.3  ___                     "
     Start-Sleep -m 10
 	write-host "              E::::::::::::::::::::E                                  |@EdwardsCP|                    "
     Start-Sleep -m 10
@@ -528,16 +528,18 @@ Function ProcessEvents{
 	$script:PreviousUnknownSHA256BadCounter = 0
 	$script:PreviousUnknownIMPHASHBadCounter = 0
     $script:BazaarCounter = 0
-    $PassCount = 0			  
+    $PassCount = 1			  
 	foreach ($script:event in $script:events) {
-        #For ever 50th event processed, display a countdown of how many loaded events are left.  Comment out both of these If statements if it's too noisy.
+        <#
+		#For ever 50th event processed, display a countdown of how many loaded events are left.  Comment out both of these If statements if it's too noisy.
         If ($PassCount -eq 51){
             $PassCount = 1
         }
         If ($PassCount -eq 50){
             Write-Host "Remaining Events to process: " $I
         }
-        
+        #>
+		Write-Progress -Activity "Processing Events" -Status "Progress: $PassCount of $I" -PercentComplete ($PassCount/$I*100)
         #prep some variables to be null or false before each pass
         $MD5nextEvent = $false
 		$SHA1nextEvent = $false
@@ -807,7 +809,7 @@ Function ProcessEvents{
 
         }
     $PassCount++
-    $I--
+    #$I--
     }#end of foreach loop
     write-host "========================="
     if ($script:EVTXLoad){
